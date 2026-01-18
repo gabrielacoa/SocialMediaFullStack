@@ -1,8 +1,8 @@
 package com.socialmediaapp.backend.service;
 
-import com.socialmediaapp.backend.model.Like;
+import com.socialmediaapp.backend.model.PostLiked;
 import com.socialmediaapp.backend.model.Post;
-import com.socialmediaapp.backend.repository.LikeRepository;
+import com.socialmediaapp.backend.repository.PostLikedRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 class LikeServiceTest {
 
     @Mock
-    private LikeRepository likeRepository;
+    private PostLikedRepository postLikedRepository;
 
     @InjectMocks
     private LikeServiceImpl likeService;
@@ -34,23 +34,23 @@ class LikeServiceTest {
     void testAddLike() {
         Post post = new Post();
         post.setId(1L);
-        Like like = new Like();
+        PostLiked like = new PostLiked();
         like.setPost(post);
 
-        when(likeRepository.save(any(Like.class))).thenReturn(like);
+        when(postLikedRepository.save(any(PostLiked.class))).thenReturn(like);
 
-        Like addedLike = likeService.addLike(like);
+        PostLiked addedLike = likeService.addLike(like);
 
         assertEquals(1L, addedLike.getPost().getId());
-        verify(likeRepository, times(1)).save(like);
+        verify(postLikedRepository, times(1)).save(like);
     }
 
     @Test
     void testAddLikeWithInvalidData() {
-        Like like = new Like();
+        PostLiked like = new PostLiked();
         like.setPost(null); // ID de post nulo
 
-        when(likeRepository.save(any(Like.class))).thenThrow(new IllegalArgumentException("Invalid like data"));
+        when(postLikedRepository.save(any(PostLiked.class))).thenThrow(new IllegalArgumentException("Invalid like data"));
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             likeService.addLike(like);
@@ -61,38 +61,38 @@ class LikeServiceTest {
 
     @Test
     void testGetLikesByPostId() {
-        Like like = new Like();
+        PostLiked like = new PostLiked();
 
-        when(likeRepository.findByPostId(1L)).thenReturn(List.of(like));
+        when(postLikedRepository.findByPostId(1L)).thenReturn(List.of(like));
 
-        List<Like> likes = likeService.getLikesByPostId(1L);
+        List<PostLiked> likes = likeService.getLikesByPostId(1L);
 
         assertEquals(1, likes.size());
-        verify(likeRepository, times(1)).findByPostId(1L);
+        verify(postLikedRepository, times(1)).findByPostId(1L);
     }
 
     @Test
     void testDeleteLike() {
-        Like like = new Like();
+        PostLiked like = new PostLiked();
         like.setId(1L);
 
-        when(likeRepository.findById(1L)).thenReturn(Optional.of(like));
-        doNothing().when(likeRepository).deleteById(1L);
+        when(postLikedRepository.findById(1L)).thenReturn(Optional.of(like));
+        doNothing().when(postLikedRepository).deleteById(1L);
 
         likeService.removeLike(1L);
 
-        verify(likeRepository, times(1)).deleteById(1L);
+        verify(postLikedRepository, times(1)).deleteById(1L);
     }
 
     @Test
     void testDeleteNonExistentLike() {
-        when(likeRepository.findById(99L)).thenReturn(Optional.empty());
+        when(postLikedRepository.findById(99L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
             likeService.removeLike(99L);
         });
 
         assertEquals("Like not found", exception.getMessage());
-        verify(likeRepository, never()).deleteById(99L);
+        verify(postLikedRepository, never()).deleteById(99L);
     }
 }

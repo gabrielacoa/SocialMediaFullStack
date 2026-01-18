@@ -1,4 +1,4 @@
-package com.socialmediaapp.backend.dto;
+package com.socialmediaapp.backend.dto.response;
 
 import lombok.Data;
 

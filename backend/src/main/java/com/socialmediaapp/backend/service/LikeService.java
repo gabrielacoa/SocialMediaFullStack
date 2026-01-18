@@ -1,15 +1,16 @@
 package com.socialmediaapp.backend.service;
 
-import com.socialmediaapp.backend.model.Like;
+import com.socialmediaapp.backend.dto.response.PostLikedDto;
 
 import java.util.List;
 
 /**
- * Interfaz para el servicio de la entidad Like.
+ * Interfaz para el servicio de la entidad PostLiked (likes).
  */
 public interface LikeService {
-    Like addLike(Like like);
-    List<Like> getLikesByPostId(Long postId);
-    List<Like> getLikesByUserId(Long userId);
-    void removeLike(Long id);
+    PostLikedDto addLike(Long postId, Long userId);
+    List<PostLikedDto> getLikesByPostId(Long postId);
+    List<PostLikedDto> getLikesByUserId(Long userId);
+    void removeLike(Long postId, Long userId);
+    boolean hasUserLikedPost(Long postId, Long userId);
 }

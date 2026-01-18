@@ -21,17 +21,26 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String content;
 
     @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false)
     private Date sentAt;
+
+    @Column(nullable = false)
+    private boolean isRead = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
-    private User receiver;
+    @JoinColumn(name = "chat_id", nullable = false)
+    private Chat chat;
+
+    @PrePersist
+    protected void onCreate() {
+        sentAt = new Date();
+    }
 }

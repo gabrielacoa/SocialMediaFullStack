@@ -1,6 +1,8 @@
 package com.socialmediaapp.backend.service;
 
-import com.socialmediaapp.backend.model.Post;
+import com.socialmediaapp.backend.dto.request.post.CreatePostRequest;
+import com.socialmediaapp.backend.dto.request.post.UpdatePostRequest;
+import com.socialmediaapp.backend.dto.response.PostDto;
 
 import java.util.List;
 
@@ -8,9 +10,10 @@ import java.util.List;
  * Interfaz para el servicio de la entidad Post.
  */
 public interface PostService {
-    Post createPost(Post post);
-    Post getPostById(Long id);
-    List<Post> getAllPosts();
-    List<Post> getPostsByUserId(Long userId);
-    void deletePost(Long id);
+    PostDto createPost(CreatePostRequest request, Long userId);
+    PostDto getPostById(Long id);
+    List<PostDto> getAllPosts();
+    List<PostDto> getPostsByUserId(Long userId);
+    PostDto updatePost(Long id, UpdatePostRequest request, Long userId);
+    void deletePost(Long id, Long userId);
 }
