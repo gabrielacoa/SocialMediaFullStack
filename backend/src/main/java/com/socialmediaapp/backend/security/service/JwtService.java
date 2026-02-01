@@ -80,4 +80,48 @@ public class JwtService {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
+
+    // ==================== TOKENS TEMPORALES PARA 2FA ====================
+
+    private static final long TEMP_TOKEN_EXPIRATION = 5 * 60 * 1000; // 5 minutos
+
+    /**
+     * Genera un token temporal para el proceso de 2FA.
+     * Este token tiene corta duracion y un claim especial.
+     */
+    public String generateTempToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "2fa_temp");
+        return createTempToken(claims, username);
+    }
+
+    private String createTempToken(Map<String, Object> claims, String subject) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + TEMP_TOKEN_EXPIRATION);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * Valida un token temporal de 2FA.
+     */
+    public Boolean validateTempToken(String token, String username) {
+        try {
+            final Claims claims = extractAllClaims(token);
+            final String extractedUsername = claims.getSubject();
+            final String tokenType = claims.get("type", String.class);
+
+            return extractedUsername.equals(username)
+                    && "2fa_temp".equals(tokenType)
+                    && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

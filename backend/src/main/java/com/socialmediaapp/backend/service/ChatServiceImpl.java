@@ -13,6 +13,7 @@ import com.socialmediaapp.backend.model.User;
 import com.socialmediaapp.backend.repository.ChatRepository;
 import com.socialmediaapp.backend.repository.MessageRepository;
 import com.socialmediaapp.backend.repository.UserRepository;
+import com.socialmediaapp.backend.socketio.SocketIOService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,9 @@ public class ChatServiceImpl implements ChatService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private SocketIOService socketIOService;
 
     @Override
     public MessageDto sendMessage(SendMessageRequest request, Long senderId) {
@@ -69,7 +73,13 @@ public class ChatServiceImpl implements ChatService {
         chat.setLastMessageAt(new Date());
         chatRepository.save(chat);
 
-        return mapMessageToDto(savedMessage);
+        MessageDto messageDto = mapMessageToDto(savedMessage);
+
+        // Enviar mensaje en tiempo real via Socket.IO
+        socketIOService.sendMessageToUser(request.getReceiverId(), messageDto);
+        socketIOService.sendMessageToChat(chat.getId(), messageDto);
+
+        return messageDto;
     }
 
     @Override

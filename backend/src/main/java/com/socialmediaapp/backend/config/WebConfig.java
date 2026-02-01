@@ -26,7 +26,21 @@ public class WebConfig {
                 registry.addMapping("/**")
                         .allowedOrigins(origins)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                        .allowedHeaders("*")
+                        // SEGURIDAD: Headers explícitos en lugar de "*"
+                        .allowedHeaders(
+                            "Authorization",
+                            "Content-Type",
+                            "Accept",
+                            "Origin",
+                            "X-Requested-With",
+                            "X-CSRF-Token",
+                            "X-XSRF-TOKEN",
+                            "userId"
+                        )
+                        .exposedHeaders(
+                            "X-Rate-Limit-Remaining",
+                            "X-Rate-Limit-Retry-After-Seconds"
+                        )
                         .allowCredentials(true)
                         .maxAge(3600); // Cache preflight request por 1 hora
             }

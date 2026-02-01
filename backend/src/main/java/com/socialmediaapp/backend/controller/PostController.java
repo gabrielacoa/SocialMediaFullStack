@@ -3,11 +3,15 @@ package com.socialmediaapp.backend.controller;
 import com.socialmediaapp.backend.dto.request.post.CreatePostRequest;
 import com.socialmediaapp.backend.dto.request.post.UpdatePostRequest;
 import com.socialmediaapp.backend.dto.response.PostDto;
+import com.socialmediaapp.backend.model.User;
+import com.socialmediaapp.backend.repository.UserRepository;
 import com.socialmediaapp.backend.service.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,13 +26,26 @@ public class PostController {
     @Autowired
     private PostService postService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    /**
+     * Obtiene el ID del usuario autenticado desde el contexto de seguridad.
+     */
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return user.getId();
+    }
+
     /**
      * Crea un nuevo post.
      */
     @PostMapping
-    public ResponseEntity<PostDto> createPost(
-            @Valid @RequestBody CreatePostRequest request,
-            @RequestHeader("userId") Long userId) {
+    public ResponseEntity<PostDto> createPost(@Valid @RequestBody CreatePostRequest request) {
+        Long userId = getAuthenticatedUserId();
         PostDto post = postService.createPost(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
@@ -66,8 +83,8 @@ public class PostController {
     @PutMapping("/{id}")
     public ResponseEntity<PostDto> updatePost(
             @PathVariable Long id,
-            @Valid @RequestBody UpdatePostRequest request,
-            @RequestHeader("userId") Long userId) {
+            @Valid @RequestBody UpdatePostRequest request) {
+        Long userId = getAuthenticatedUserId();
         PostDto post = postService.updatePost(id, request, userId);
         return ResponseEntity.ok(post);
     }
@@ -76,9 +93,8 @@ public class PostController {
      * Elimina un post.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePost(
-            @PathVariable Long id,
-            @RequestHeader("userId") Long userId) {
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        Long userId = getAuthenticatedUserId();
         postService.deletePost(id, userId);
         return ResponseEntity.noContent().build();
     }

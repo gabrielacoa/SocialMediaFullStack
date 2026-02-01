@@ -414,10 +414,11 @@ CREATE TABLE users_saved_post (
 
 ### Backend
 
-**Archivos Java:** 98 archivos
+**Archivos Java:** ~100 archivos
 **Tests:** 38 test cases
-**Compilación:** ✅ BUILD SUCCESS
+**Compilación:** ✅ BUILD SUCCESS (con -Dmaven.test.skip)
 **Documentación:** ✅ Swagger UI disponible
+**Integración Frontend:** ✅ React conectado
 
 ### Endpoints Disponibles
 
@@ -444,9 +445,17 @@ CREATE TABLE users_saved_post (
 - DELETE `/api/comments/{id}` - Eliminar comentario
 
 **Likes:**
-- POST `/api/posts/{postId}/like` - Dar like
-- DELETE `/api/posts/{postId}/like` - Quitar like
+- POST `/api/likes/post/{postId}` - Dar like
+- DELETE `/api/likes/post/{postId}` - Quitar like
 - GET `/api/posts/{postId}/likes` - Listar likes
+
+**Saved Posts:**
+- POST `/api/saved/post/{postId}` - Guardar post
+- DELETE `/api/saved/post/{postId}` - Quitar de guardados
+- GET `/api/saved/post/{postId}` - Verificar si está guardado
+
+**Upload:**
+- POST `/api/upload/image` - Subir imagen a Cloudinary
 
 **Reels:**
 - POST `/api/reels` - Crear reel
@@ -477,8 +486,9 @@ CREATE TABLE users_saved_post (
 ## 🎯 Próximos Pasos Sugeridos
 
 ### Frontend Integration
-- [ ] Conectar React con endpoints Swagger
-- [ ] Implementar autenticación JWT en frontend
+- [x] Conectar React con endpoints del backend
+- [x] Implementar autenticación JWT en frontend
+- [x] Integración de likes, comentarios y guardar posts
 - [ ] UI para Reels, Stories y Chat
 
 ### Features Avanzadas
@@ -495,7 +505,7 @@ CREATE TABLE users_saved_post (
 ### Performance
 - [ ] Redis para caché
 - [ ] Paginación en todos los endpoints
-- [ ] Compresión de imágenes con Cloudinary
+- [x] Integración con Cloudinary para imágenes
 
 ### Security
 - [ ] Refresh tokens
@@ -528,19 +538,180 @@ mvn clean package
 ---
 
 **Proyecto mantenido por:** Gabriela
-**Última actualización:** 2025-12-10
-**Versión actual:** V004
+**Última actualización:** 2026-02-01
+**Versión actual:** V006
+
+## [V006] - 2026-02-01
+
+### 🔧 Integración Frontend-Backend & Correcciones Críticas
+
+**Tipo:** Bug Fixes / Integration
+**Estado:** ✅ Completado
+
+#### Resumen
+
+Sesión de debugging intensiva para conectar el frontend React con el backend Spring Boot. Se corrigieron múltiples problemas de integración, CORS, autenticación JWT y funcionalidades sociales (likes, comentarios, guardar posts).
+
+#### Cambios Implementados
+
+##### 1. Configuración CORS en Spring Security
+
+**Problema:**
+- Frontend recibía error 403 Forbidden en todas las peticiones API
+- Spring Security bloqueaba requests cross-origin
+
+**Solución:**
+- Creado `corsConfigurationSource()` bean en `SecurityConfig.java`
+- Configurados headers permitidos: Authorization, Content-Type, Accept, Origin, X-Requested-With
+- Habilitado `allowCredentials` para cookies/JWT
+- Integrado con `http.cors(cors -> cors.configurationSource(corsConfigurationSource()))`
+
+##### 2. PostDto y PostMapper - Información de Usuario
+
+**Problema:**
+- Error: "Cannot read properties of undefined (reading 'avatar')"
+- PostDto no incluía información del usuario (avatar, username)
+
+**Solución:**
+- Expandido `PostDto.java` con clase interna `UserSummary` (id, username, avatar, name)
+- Agregados campos: likesCount, commentsCount, liked, saved, comments
+- Actualizado `PostMapper.java` para mapear todos los campos incluyendo user summary
+
+##### 3. Mapeo de Campos Frontend
+
+**Problema:**
+- Posts se publicaban vacíos (sin contenido ni imagen)
+- Frontend usaba `post.description`, backend retornaba `post.content`
+
+**Solución:**
+- Corregido `PostCard.js`: `post.description` → `post.content`
+- Corregido contador: `post.likeCount` → `post.likesCount`
+
+##### 4. Integración Cloudinary para Imágenes
+
+**Problema:**
+- Imágenes no se subían al crear posts
+
+**Solución:**
+- Creado `UploadController.java` con endpoint `POST /api/upload/image`
+- Configuradas credenciales Cloudinary en `application.properties`
+- Actualizado `postSlice.js` para subir imagen primero, luego crear post con URL
+
+##### 5. Extensión de Expiración JWT
+
+**Problema:**
+- Token JWT expiraba en 15 minutos, sesión se cerraba constantemente
+
+**Solución:**
+- Cambiado `JWT_EXPIRATION` de 900000ms (15 min) a 86400000ms (24 horas)
+
+##### 6. Funcionalidad de Likes
+
+**Problema:**
+- Like no funcionaba, contador siempre mostraba 0
+- Endpoints frontend/backend no coincidían
+
+**Solución:**
+- Frontend: `/posts/${postId}/like` → `/likes/post/${postId}`
+- Actualizado `LikeController.java` para obtener userId del JWT en lugar de header
+- Agregado método `getAuthenticatedUserId()` usando SecurityContext
+
+##### 7. Funcionalidad de Comentarios
+
+**Problema:**
+- Comentarios no se guardaban
+
+**Solución:**
+- Frontend: endpoint corregido a `POST /api/comments` con body `{ content, postId }`
+- Actualizado `CommentController.java` para usar autenticación JWT
+
+##### 8. Funcionalidad de Guardar Posts (Bookmarks)
+
+**Problema:**
+- No existía endpoint para guardar/quitar posts guardados
+- StackOverflowError al intentar guardar (referencias circulares)
+
+**Solución:**
+- Creado `SavedPostController.java` con endpoints:
+  - `POST /api/saved/post/{postId}` - Guardar post
+  - `DELETE /api/saved/post/{postId}` - Quitar de guardados
+  - `GET /api/saved/post/{postId}` - Verificar si está guardado
+- Actualizado `postSlice.js` con thunks `savePost` y `unsavePost`
+
+##### 9. Fix StackOverflowError en Entidades JPA
+
+**Problema:**
+- Error de recursión infinita al guardar posts
+- Lombok @Data generaba hashCode incluyendo relaciones bidireccionales
+- User → savedPosts → Post → user → ... (loop infinito)
+
+**Solución:**
+- Agregado `@EqualsAndHashCode(onlyExplicitlyIncluded = true)` a `User.java` y `Post.java`
+- Marcado solo campo `id` con `@EqualsAndHashCode.Include`
+- Evita recursión en equals/hashCode manteniendo funcionalidad de colecciones
+
+##### 10. Corrección Layout MainLayout
+
+**Problema:**
+- Contenido central se escondía detrás del sidebar
+
+**Solución:**
+- Sidebar: agregado `position: fixed`, `height: 100vh`, `left: 0`, `top: 0`
+- Main content: agregado `width: calc(100% - 240px)` en desktop
+
+#### Archivos Modificados
+
+**Backend:**
+- `SecurityConfig.java` - CORS configuration
+- `PostDto.java` - Expanded with user info and counts
+- `PostMapper.java` - Full mapping implementation
+- `LikeController.java` - JWT authentication
+- `CommentController.java` - JWT authentication
+- `PostController.java` - JWT authentication
+- `User.java` - EqualsAndHashCode fix
+- `Post.java` - EqualsAndHashCode fix
+- `application.properties` - Cloudinary config
+
+**Backend (Nuevos):**
+- `UploadController.java` - Image upload endpoint
+- `SavedPostController.java` - Bookmark functionality
+
+**Frontend:**
+- `postSlice.js` - Updated endpoints and thunks
+- `PostCard.js` - Fixed field mappings, delete functionality
+- `MainLayout.js` - Fixed sidebar/content layout
+
+#### Impacto
+
+**Funcionalidades Verificadas:**
+- ✅ Login/Registro funcionando
+- ✅ Crear posts con imagen y texto
+- ✅ Ver feed de posts
+- ✅ Like/Unlike posts (contador actualiza)
+- ✅ Comentar en posts
+- ✅ Guardar/Quitar posts guardados
+- ✅ Eliminar posts propios
+- ✅ Navegación entre páginas
+
+**Endpoints Actualizados:**
+- `POST /api/upload/image` - Subir imagen a Cloudinary
+- `POST /api/likes/post/{postId}` - Dar like (JWT auth)
+- `DELETE /api/likes/post/{postId}` - Quitar like (JWT auth)
+- `POST /api/saved/post/{postId}` - Guardar post
+- `DELETE /api/saved/post/{postId}` - Quitar de guardados
+
+---
 
 ## [V005] - 2026-01-17
 
 ### 🚀 Infraestructura & CI/CD - Preparación para Producción
 **Tipo:** DevOps / Deployment
-**Estado:** 🔄 En Progreso
+**Estado:** ✅ Completado
 
 #### Objetivos de la versión:
 - ✅ Configuración de `.cursorrules` para desarrollo de alta velocidad (Vibe Coding).
-- 🔄 Dockerización completa de la arquitectura (Spring Boot + React).
-- 🔄 Despliegue en **Render** (Backend) y **Vercel** (Frontend).
-- 🔄 Sincronización de repositorio local con GitHub.
+- ✅ Dockerización completa de la arquitectura (Spring Boot + React).
+- ✅ Configuración para despliegue en **Render** (Backend) y **Vercel** (Frontend).
+- ✅ Sincronización de repositorio local con GitHub.
 
-_ _ _
+---

@@ -3,6 +3,7 @@ package com.socialmediaapp.backend.model;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -17,10 +18,12 @@ import java.util.HashSet;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -41,14 +44,20 @@ public class User {
     @Column
     private String profilePicture;
 
+    // Campos para 2FA (Two-Factor Authentication)
+    @Column(name = "two_factor_enabled")
+    private boolean twoFactorEnabled = false;
+
+    @Column(name = "two_factor_secret")
+    private String twoFactorSecret;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts;
 
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Message> sentMessages;
 
-    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Message> receivedMessages;
+    // Los mensajes recibidos se obtienen a través de Chat (user1/user2), no directamente en Message
 
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notifications;

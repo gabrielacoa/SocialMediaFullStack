@@ -1,10 +1,14 @@
 package com.socialmediaapp.backend.controller;
 
 import com.socialmediaapp.backend.dto.response.PostLikedDto;
+import com.socialmediaapp.backend.model.User;
+import com.socialmediaapp.backend.repository.UserRepository;
 import com.socialmediaapp.backend.service.LikeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,13 +23,23 @@ public class LikeController {
     @Autowired
     private LikeService likeService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return user.getId();
+    }
+
     /**
      * Agrega un like a un post.
      */
     @PostMapping("/post/{postId}")
-    public ResponseEntity<PostLikedDto> addLike(
-            @PathVariable Long postId,
-            @RequestHeader("userId") Long userId) {
+    public ResponseEntity<PostLikedDto> addLike(@PathVariable Long postId) {
+        Long userId = getAuthenticatedUserId();
         PostLikedDto like = likeService.addLike(postId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(like);
     }
@@ -63,9 +77,8 @@ public class LikeController {
      * Elimina un like de un post.
      */
     @DeleteMapping("/post/{postId}")
-    public ResponseEntity<Void> removeLike(
-            @PathVariable Long postId,
-            @RequestHeader("userId") Long userId) {
+    public ResponseEntity<Void> removeLike(@PathVariable Long postId) {
+        Long userId = getAuthenticatedUserId();
         likeService.removeLike(postId, userId);
         return ResponseEntity.noContent().build();
     }

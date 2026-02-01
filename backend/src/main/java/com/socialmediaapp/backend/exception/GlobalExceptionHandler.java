@@ -108,6 +108,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja AccountLockedException (423 Locked).
+     */
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountLockedException(AccountLockedException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", ex.getMessage());
+        response.put("remainingSeconds", ex.getRemainingSeconds());
+        response.put("locked", true);
+
+        logger.warn("Cuenta bloqueada: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.LOCKED).body(response);
+    }
+
+    /**
      * Maneja errores de validación de campos (400 Bad Request).
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
