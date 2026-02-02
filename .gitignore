@@ -30,6 +30,13 @@
 **/*.iws
 **/*.ipr
 
+# Configuración de herramientas IA
+.cursorrules
+.cursorignore
+.claude
+.claude*
+CLAUDE.md
+
 # Spring Boot
 **/HELP.md
 **/.gradle
