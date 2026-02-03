@@ -12,8 +12,11 @@ import java.util.List;
 public interface PostService {
     PostDto createPost(CreatePostRequest request, Long userId);
     PostDto getPostById(Long id);
+    PostDto getPostById(Long id, Long currentUserId);
     List<PostDto> getAllPosts();
+    List<PostDto> getAllPosts(Long currentUserId);
     List<PostDto> getPostsByUserId(Long userId);
+    List<PostDto> getPostsByUserId(Long userId, Long currentUserId);
     PostDto updatePost(Long id, UpdatePostRequest request, Long userId);
     void deletePost(Long id, Long userId);
 }

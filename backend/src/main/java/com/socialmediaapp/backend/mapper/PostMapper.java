@@ -20,6 +20,13 @@ public class PostMapper {
      * Convierte Post entity a PostDto.
      */
     public PostDto toDto(Post post) {
+        return toDto(post, null);
+    }
+
+    /**
+     * Convierte Post entity a PostDto con información del usuario actual.
+     */
+    public PostDto toDto(Post post, Long currentUserId) {
         if (post == null) {
             return null;
         }
@@ -28,6 +35,7 @@ public class PostMapper {
         dto.setId(post.getId());
         dto.setContent(post.getContent());
         dto.setImageUrl(post.getImageUrl());
+        dto.setImage(post.getImageUrl());  // Alias para frontend
         dto.setCreatedAt(post.getCreatedAt());
 
         // Mapear información del usuario
@@ -51,9 +59,21 @@ public class PostMapper {
             dto.setComments(new ArrayList<>());
         }
 
-        // Por defecto, liked y saved son false (se actualizan según el usuario actual)
-        dto.setLiked(false);
-        dto.setSaved(false);
+        // Verificar si el usuario actual ha dado like
+        if (currentUserId != null && post.getLikes() != null) {
+            dto.setLiked(post.getLikes().stream()
+                    .anyMatch(like -> like.getUser() != null && like.getUser().getId().equals(currentUserId)));
+        } else {
+            dto.setLiked(false);
+        }
+
+        // Verificar si el usuario actual ha guardado el post
+        if (currentUserId != null && post.getUser() != null) {
+            // Para saved, necesitamos verificar desde el lado del usuario
+            dto.setSaved(false); // Se actualizará en el servicio si es necesario
+        } else {
+            dto.setSaved(false);
+        }
 
         return dto;
     }

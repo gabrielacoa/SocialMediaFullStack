@@ -13,6 +13,7 @@ public class PostDto {
     private Long id;
     private String content;
     private String imageUrl;
+    private String image;  // Alias para frontend
     private String videoUrl;
     private String location;
     private Date createdAt;

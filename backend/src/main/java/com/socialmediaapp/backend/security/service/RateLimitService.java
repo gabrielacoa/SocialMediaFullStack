@@ -26,10 +26,10 @@ public class RateLimitService {
     }
 
     /**
-     * Crea un nuevo bucket con límite de 5 tokens que se rellenan a razón de 5 por minuto.
+     * Crea un nuevo bucket con límite de 50 tokens que se rellenan a razón de 50 por minuto.
      */
     private Bucket createNewBucket() {
-        Bandwidth limit = Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(1)));
+        Bandwidth limit = Bandwidth.classic(50, Refill.intervally(50, Duration.ofMinutes(1)));
         return Bucket.builder()
                 .addLimit(limit)
                 .build();

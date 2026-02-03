@@ -55,7 +55,8 @@ public class PostController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<PostDto> getPostById(@PathVariable Long id) {
-        PostDto post = postService.getPostById(id);
+        Long currentUserId = getAuthenticatedUserId();
+        PostDto post = postService.getPostById(id, currentUserId);
         return ResponseEntity.ok(post);
     }
 
@@ -64,7 +65,8 @@ public class PostController {
      */
     @GetMapping
     public ResponseEntity<List<PostDto>> getAllPosts() {
-        List<PostDto> posts = postService.getAllPosts();
+        Long currentUserId = getAuthenticatedUserId();
+        List<PostDto> posts = postService.getAllPosts(currentUserId);
         return ResponseEntity.ok(posts);
     }
 
@@ -73,7 +75,8 @@ public class PostController {
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<PostDto>> getPostsByUserId(@PathVariable Long userId) {
-        List<PostDto> posts = postService.getPostsByUserId(userId);
+        Long currentUserId = getAuthenticatedUserId();
+        List<PostDto> posts = postService.getPostsByUserId(userId, currentUserId);
         return ResponseEntity.ok(posts);
     }
 

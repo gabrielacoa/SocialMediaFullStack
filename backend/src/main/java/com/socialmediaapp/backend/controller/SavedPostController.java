@@ -74,6 +74,34 @@ public class SavedPostController {
     }
 
     /**
+     * Obtiene todos los posts guardados del usuario.
+     */
+    @GetMapping
+    public ResponseEntity<?> getSavedPosts() {
+        User user = getAuthenticatedUser();
+        return ResponseEntity.ok(user.getSavedPosts().stream().map(post -> {
+            Map<String, Object> postMap = new HashMap<>();
+            postMap.put("id", post.getId());
+            postMap.put("content", post.getContent());
+            postMap.put("imageUrl", post.getImageUrl());
+            postMap.put("image", post.getImageUrl());
+            postMap.put("createdAt", post.getCreatedAt());
+            postMap.put("likesCount", post.getLikes() != null ? post.getLikes().size() : 0);
+            postMap.put("commentsCount", post.getComments() != null ? post.getComments().size() : 0);
+            postMap.put("saved", true);
+            if (post.getUser() != null) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("id", post.getUser().getId());
+                userMap.put("username", post.getUser().getUsername());
+                userMap.put("avatar", post.getUser().getProfilePictureUrl() != null ?
+                    post.getUser().getProfilePictureUrl() : post.getUser().getProfilePicture());
+                postMap.put("user", userMap);
+            }
+            return postMap;
+        }).toList());
+    }
+
+    /**
      * Verifica si un post está guardado.
      */
     @GetMapping("/post/{postId}")

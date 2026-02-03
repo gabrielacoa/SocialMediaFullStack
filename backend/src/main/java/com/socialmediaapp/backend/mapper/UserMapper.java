@@ -23,6 +23,8 @@ public class UserMapper {
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
+        dto.setBio(user.getBio());
+        dto.setProfilePictureUrl(user.getProfilePictureUrl());
         return dto;
     }
 
@@ -40,6 +42,12 @@ public class UserMapper {
         }
         if (dto.getEmail() != null) {
             user.setEmail(dto.getEmail());
+        }
+        if (dto.getBio() != null) {
+            user.setBio(dto.getBio());
+        }
+        if (dto.getProfilePictureUrl() != null) {
+            user.setProfilePictureUrl(dto.getProfilePictureUrl());
         }
     }
 }

@@ -52,26 +52,72 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public PostDto getPostById(Long id) {
+        return getPostById(id, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PostDto getPostById(Long id, Long currentUserId) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", id));
-        return postMapper.toDto(post);
+        PostDto dto = postMapper.toDto(post, currentUserId);
+
+        // Verificar si el post está guardado por el usuario actual
+        if (currentUserId != null) {
+            User currentUser = userRepository.findById(currentUserId).orElse(null);
+            if (currentUser != null && currentUser.getSavedPosts() != null) {
+                dto.setSaved(currentUser.getSavedPosts().contains(post));
+            }
+        }
+
+        return dto;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PostDto> getAllPosts() {
+        return getAllPosts(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostDto> getAllPosts(Long currentUserId) {
+        User currentUser = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
+
         return postRepository.findAll()
                 .stream()
-                .map(postMapper::toDto)
+                .map(post -> {
+                    PostDto dto = postMapper.toDto(post, currentUserId);
+                    // Verificar si está guardado
+                    if (currentUser != null && currentUser.getSavedPosts() != null) {
+                        dto.setSaved(currentUser.getSavedPosts().contains(post));
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PostDto> getPostsByUserId(Long userId) {
+        return getPostsByUserId(userId, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostDto> getPostsByUserId(Long userId, Long currentUserId) {
+        User currentUser = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
+
         return postRepository.findByUserId(userId)
                 .stream()
-                .map(postMapper::toDto)
+                .map(post -> {
+                    PostDto dto = postMapper.toDto(post, currentUserId);
+                    // Verificar si está guardado
+                    if (currentUser != null && currentUser.getSavedPosts() != null) {
+                        dto.setSaved(currentUser.getSavedPosts().contains(post));
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
