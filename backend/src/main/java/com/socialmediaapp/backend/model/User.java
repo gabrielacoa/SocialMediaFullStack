@@ -38,8 +38,17 @@ public class User {
     @Column(nullable = true)
     private String profilePictureUrl;
 
+    @Column(length = 100)
+    private String name;
+
     @Column(length = 200)
     private String bio;
+
+    @Column(length = 100)
+    private String website;
+
+    @Column(length = 20)
+    private String phoneNumber;
 
     @Column
     private String profilePicture;

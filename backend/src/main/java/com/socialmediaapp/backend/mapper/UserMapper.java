@@ -25,6 +25,9 @@ public class UserMapper {
         dto.setEmail(user.getEmail());
         dto.setBio(user.getBio());
         dto.setProfilePictureUrl(user.getProfilePictureUrl());
+        dto.setName(user.getName());
+        dto.setWebsite(user.getWebsite());
+        dto.setPhoneNumber(user.getPhoneNumber());
         return dto;
     }
 

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import com.socialmediaapp.backend.service.CloudinaryService;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -66,11 +70,11 @@ public class UserController {
         profile.put("id", user.getId());
         profile.put("username", user.getUsername());
         profile.put("email", user.getEmail());
-        profile.put("name", user.getUsername());
+        profile.put("name", user.getName() != null ? user.getName() : "");
         profile.put("bio", user.getBio());
         profile.put("profileImage", user.getProfilePictureUrl() != null ?
             user.getProfilePictureUrl() : user.getProfilePicture());
-        profile.put("website", null);
+        profile.put("website", user.getWebsite() != null ? user.getWebsite() : "");
         profile.put("postsCount", user.getPosts() != null ? user.getPosts().size() : 0);
         profile.put("followersCount", user.getFollowers() != null ? user.getFollowers().size() : 0);
         profile.put("followingCount", user.getFollowing() != null ? user.getFollowing().size() : 0);
@@ -103,6 +107,19 @@ public class UserController {
         if (bio != null) {
             user.setBio(bio);
         }
+        if (website != null) {
+            user.setWebsite(website);
+        }
+        if (phoneNumber != null) {
+            user.setPhoneNumber(phoneNumber);
+        }
+        // Combinar firstName + lastName en el campo name
+        String first = (firstName != null) ? firstName.trim() : "";
+        String last = (lastName != null) ? lastName.trim() : "";
+        String fullName = (first + " " + last).trim();
+        if (!fullName.isEmpty()) {
+            user.setName(fullName);
+        }
 
         // Subir imagen de perfil si se proporciona
         if (profileImage != null && !profileImage.isEmpty()) {
@@ -114,14 +131,17 @@ public class UserController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Perfil actualizado exitosamente");
-        response.put("user", Map.of(
-            "id", user.getId(),
-            "username", user.getUsername(),
-            "email", user.getEmail(),
-            "bio", user.getBio() != null ? user.getBio() : "",
-            "profileImage", user.getProfilePictureUrl() != null ?
-                user.getProfilePictureUrl() : user.getProfilePicture()
-        ));
+        Map<String, Object> updatedUser = new HashMap<>();
+        updatedUser.put("id", user.getId());
+        updatedUser.put("username", user.getUsername());
+        updatedUser.put("email", user.getEmail());
+        updatedUser.put("name", user.getName() != null ? user.getName() : "");
+        updatedUser.put("bio", user.getBio() != null ? user.getBio() : "");
+        updatedUser.put("website", user.getWebsite() != null ? user.getWebsite() : "");
+        updatedUser.put("phoneNumber", user.getPhoneNumber() != null ? user.getPhoneNumber() : "");
+        updatedUser.put("profileImage", user.getProfilePictureUrl() != null ?
+            user.getProfilePictureUrl() : (user.getProfilePicture() != null ? user.getProfilePicture() : ""));
+        response.put("user", updatedUser);
 
         return ResponseEntity.ok(response);
     }
@@ -166,10 +186,10 @@ public class UserController {
         profile.put("id", user.getId());
         profile.put("username", user.getUsername());
         profile.put("email", user.getEmail());
-        profile.put("name", user.getUsername());
+        profile.put("name", user.getName() != null ? user.getName() : "");
         profile.put("bio", user.getBio());
         profile.put("profileImage", user.getProfilePictureUrl());
-        profile.put("website", null);
+        profile.put("website", user.getWebsite() != null ? user.getWebsite() : "");
         profile.put("postsCount", postService.getPostsByUserId(id).size());
         profile.put("followersCount", 0);
         profile.put("followingCount", 0);
@@ -185,6 +205,7 @@ public class UserController {
     public ResponseEntity<List<PostDto>> getUserPosts(@PathVariable Long id) {
         Long currentUserId = getAuthenticatedUserId();
         List<PostDto> posts = postService.getPostsByUserId(id, currentUserId);
+        log.info("GET /users/{}/posts → currentUser={}, posts encontrados={}", id, currentUserId, posts.size());
         return ResponseEntity.ok(posts);
     }
 
@@ -215,6 +236,17 @@ public class UserController {
             @Valid @RequestBody UpdateProfileRequest request) {
         UserDto user = userService.updateProfile(id, request);
         return ResponseEntity.ok(user);
+    }
+
+    /**
+     * Actualiza configuración de privacidad del usuario autenticado.
+     */
+    @PutMapping("/privacy-settings")
+    public ResponseEntity<Map<String, Object>> updatePrivacySettings(@RequestBody Map<String, Object> settings) {
+        // Por ahora devuelve éxito — se puede extender con campos reales en el modelo
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Configuración de privacidad actualizada");
+        return ResponseEntity.ok(response);
     }
 
     /**

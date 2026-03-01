@@ -25,7 +25,7 @@ public class Post {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String content;
 
     @Column(nullable = true)

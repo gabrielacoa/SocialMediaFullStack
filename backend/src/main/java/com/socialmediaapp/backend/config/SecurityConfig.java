@@ -55,11 +55,11 @@ public class SecurityConfig {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(requestHandler)
                 // Ignorar CSRF para endpoints stateless de autenticación
-                .ignoringRequestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate")
+                .ignoringRequestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/stories")
             )
             .authorizeHttpRequests(auth -> auth
                 // Endpoints públicos de autenticación
-                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                 // Endpoints de documentación Swagger/OpenAPI
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // Todos los demás requieren autenticación

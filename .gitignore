@@ -36,6 +36,8 @@
 .claude
 .claude*
 CLAUDE.md
+agente.md
+**/CHANGELOG.md
 
 # Spring Boot
 **/HELP.md

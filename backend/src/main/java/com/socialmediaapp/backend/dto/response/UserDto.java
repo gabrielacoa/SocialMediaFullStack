@@ -12,4 +12,7 @@ public class UserDto {
     private String email;
     private String bio;
     private String profilePictureUrl;
+    private String name;
+    private String website;
+    private String phoneNumber;
 }

@@ -2,12 +2,17 @@ package com.socialmediaapp.backend.controller;
 
 import com.socialmediaapp.backend.dto.request.CreateStoryRequest;
 import com.socialmediaapp.backend.dto.response.StoryDto;
+import com.socialmediaapp.backend.model.User;
+import com.socialmediaapp.backend.repository.UserRepository;
+import com.socialmediaapp.backend.service.CloudinaryService;
 import com.socialmediaapp.backend.service.StoryService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,13 +26,31 @@ public class StoryController {
     @Autowired
     private StoryService storyService;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username).orElse(null);
+        return user != null ? user.getId() : null;
+    }
+
     /**
-     * Crea una nueva story.
+     * Crea una nueva story con imagen subida a Cloudinary.
      */
     @PostMapping
     public ResponseEntity<StoryDto> createStory(
-            @Valid @RequestBody CreateStoryRequest request,
-            @RequestHeader("userId") Long userId) {
+            @RequestParam("media") MultipartFile media,
+            @RequestParam(value = "caption", required = false) String caption) {
+        Long userId = getAuthenticatedUserId();
+        String mediaUrl = cloudinaryService.uploadImage(media, "social-media/stories");
+        CreateStoryRequest request = new CreateStoryRequest();
+        request.setMediaUrl(mediaUrl);
+        request.setCaption(caption);
         StoryDto story = storyService.createStory(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(story);
     }

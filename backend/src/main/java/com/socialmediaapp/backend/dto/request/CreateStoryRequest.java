@@ -10,7 +10,6 @@ import lombok.Data;
 @Data
 public class CreateStoryRequest {
 
-    @NotBlank(message = "La URL del medio es obligatoria")
     private String mediaUrl;
 
     @Size(max = 200, message = "El caption no puede exceder 200 caracteres")

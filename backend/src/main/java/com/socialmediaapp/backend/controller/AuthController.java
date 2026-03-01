@@ -2,8 +2,10 @@ package com.socialmediaapp.backend.controller;
 
 import com.socialmediaapp.backend.audit.Auditable;
 import com.socialmediaapp.backend.dto.request.auth.ChangePasswordRequest;
+import com.socialmediaapp.backend.dto.request.auth.ForgotPasswordRequest;
 import com.socialmediaapp.backend.dto.request.auth.LoginRequest;
 import com.socialmediaapp.backend.dto.request.auth.RegisterRequest;
+import com.socialmediaapp.backend.dto.request.auth.ResetPasswordRequest;
 import com.socialmediaapp.backend.dto.request.auth.TwoFactorLoginRequest;
 import com.socialmediaapp.backend.dto.request.auth.TwoFactorSetupRequest;
 import com.socialmediaapp.backend.dto.response.AuthResponse;
@@ -14,13 +16,17 @@ import com.socialmediaapp.backend.exception.custom.BadRequestException;
 import com.socialmediaapp.backend.exception.custom.DuplicateResourceException;
 import com.socialmediaapp.backend.exception.custom.UnauthorizedException;
 import com.socialmediaapp.backend.mapper.UserMapper;
+import com.socialmediaapp.backend.model.PasswordResetToken;
 import com.socialmediaapp.backend.model.User;
+import com.socialmediaapp.backend.repository.PasswordResetTokenRepository;
 import com.socialmediaapp.backend.repository.UserRepository;
+import com.socialmediaapp.backend.service.EmailService;
 import com.socialmediaapp.backend.security.service.JwtService;
 import com.socialmediaapp.backend.security.service.LoginAttemptService;
 import com.socialmediaapp.backend.security.service.TwoFactorAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import java.util.UUID;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,6 +66,12 @@ public class AuthController {
 
     @Autowired
     private TwoFactorAuthService twoFactorAuthService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     /**
      * Registra un nuevo usuario.
@@ -453,6 +465,50 @@ public class AuthController {
     public ResponseEntity<Boolean> get2FAStatus(@RequestHeader("Authorization") String authHeader) {
         User user = getUserFromToken(authHeader);
         return ResponseEntity.ok(user.isTwoFactorEnabled());
+    }
+
+    /**
+     * Solicita recuperación de contraseña por email.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        // Buscar usuario por email (no revelar si existe o no por seguridad)
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            // Eliminar token anterior si existe
+            passwordResetTokenRepository.deleteByUser(user);
+
+            // Crear nuevo token
+            String token = UUID.randomUUID().toString();
+            PasswordResetToken resetToken = new PasswordResetToken(token, user);
+            passwordResetTokenRepository.save(resetToken);
+
+            // Enviar email
+            emailService.sendPasswordResetEmail(user.getEmail(), token);
+        });
+
+        return ResponseEntity.ok("Si tu email está registrado, recibirás instrucciones para restablecer tu contraseña.");
+    }
+
+    /**
+     * Restablece la contraseña con el token recibido por email.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException("Token inválido o expirado"));
+
+        if (resetToken.isExpired()) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new BadRequestException("El enlace ha expirado. Solicita uno nuevo.");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        passwordResetTokenRepository.delete(resetToken);
+
+        return ResponseEntity.ok("Contraseña restablecida exitosamente");
     }
 
     /**
